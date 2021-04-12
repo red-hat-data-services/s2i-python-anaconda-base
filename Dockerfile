@@ -50,6 +50,7 @@ RUN INSTALL_PKGS="nss_wrapper \
     chmod +x Anaconda3-2020.11-Linux-x86_64.sh && \
     ./Anaconda3-2020.11-Linux-x86_64.sh -b -p /opt/anaconda3 && \
     rm ./Anaconda3-2020.11-Linux-x86_64.sh && \
+    /opt/anaconda3/bin/conda update -n base -c defaults conda && \
     yum -y module disable python38:3.8 && \
     yum -y module enable httpd:2.4 && \
     yum -y --setopt=tsflags=nodocs install $INSTALL_PKGS && \
