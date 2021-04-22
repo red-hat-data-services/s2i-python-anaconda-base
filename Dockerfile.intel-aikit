@@ -21,12 +21,12 @@ ENV PYTHON_VERSION=3.8 \
 #    ENV=${APP_ROOT}/etc/scl_enable \
 #    PROMPT_COMMAND=". ${APP_ROOT}/etc/scl_enable"
 
+ENV AIKIT_APP_ROOT=/opt/aikit-app-root
+
 # Ensure we're enabling Anaconda by forcing the activation script in the shell
-ENV BASH_ENV="/opt/anaconda3/bin/activate ${APP_ROOT}" \
-    ENV="/opt/anaconda3/bin/activate ${APP_ROOT}" \
-    PROMPT_COMMAND=". /opt/anaconda3/bin/activate ${APP_ROOT}"
-
-
+ENV BASH_ENV="/opt/anaconda3/bin/activate ${AIKIT_APP_ROOT}" \
+    ENV="/opt/anaconda3/bin/activate ${AIKIT_APP_ROOT}" \
+    PROMPT_COMMAND=". /opt/anaconda3/bin/activate ${AIKIT_APP_ROOT}"
 
 ENV SUMMARY="" \
     DESCRIPTION=""
@@ -71,6 +71,11 @@ COPY ./s2i/bin/ $STI_SCRIPTS_PATH
 # - In order to drop the root user, we have to make some directories world
 #   writable as OpenShift default security model is to run the container
 #   under random UID.
+
+# Source conda.sh for all login and interactive shells.
+RUN ln -s /opt/anaconda3/etc/profile.d/conda.sh /etc/profile.d/conda.sh && \
+    echo ". /etc/profile.d/conda.sh" >> ~/.bashrc
+
 RUN \
     /opt/anaconda3/bin/conda create -y --prefix ${APP_ROOT} python=${PYTHON_VERSION} && \
     chown -R 1001:0 ${APP_ROOT} && \
@@ -78,7 +83,18 @@ RUN \
     fix-permissions /opt/anaconda3 -P && \
     rpm-file-permissions
 
+RUN \
+    /opt/anaconda3/bin/conda create -y --prefix ${AIKIT_APP_ROOT} python=3.7 && \
+    /opt/anaconda3/bin/conda install -y --prefix ${AIKIT_APP_ROOT} -c intel intel-aikit-tensorflow intel-aikit-pytorch && \
+    chown -R 1001:0 ${AIKIT_APP_ROOT} && \
+    fix-permissions ${AIKIT_APP_ROOT} -P && \
+    fix-permissions /opt/anaconda3 -P && \
+    rpm-file-permissions
+
 USER 1001
+
+# Clone Intel Model Zoo
+RUN git clone --single-branch https://github.com/IntelAI/models.git
 
 # Set the default CMD to print the usage of the language image.
 CMD $STI_SCRIPTS_PATH/usage

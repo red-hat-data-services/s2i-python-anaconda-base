@@ -58,5 +58,8 @@ if should_collectstatic; then
   )
 fi
 
+# Clone Intel Model Zoo
+git clone --single-branch https://github.com/IntelAI/models.git
+
 # set permissions for any installed artifacts
 fix-permissions /opt/app-root -P
