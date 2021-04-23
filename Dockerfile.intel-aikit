@@ -1,11 +1,13 @@
-# This image provides a Python 3.8 environment you can use to run your Python
+# This image provides a Python 3.7 environment you can use to run your Python
 # applications.
 FROM registry.access.redhat.com/ubi8/s2i-base
+
+USER root
 
 EXPOSE 8080
 
 # TODO(Spryor): ensure these are right, add Anaconda versions
-ENV PYTHON_VERSION=3.8 \
+ENV PYTHON_VERSION=3.7 \
     PATH=$HOME/.local/bin/:$PATH \
     PYTHONUNBUFFERED=1 \
     PYTHONIOENCODING=UTF-8 \
@@ -21,12 +23,10 @@ ENV PYTHON_VERSION=3.8 \
 #    ENV=${APP_ROOT}/etc/scl_enable \
 #    PROMPT_COMMAND=". ${APP_ROOT}/etc/scl_enable"
 
-ENV AIKIT_APP_ROOT=/opt/aikit-app-root
-
 # Ensure we're enabling Anaconda by forcing the activation script in the shell
-ENV BASH_ENV="/opt/anaconda3/bin/activate ${AIKIT_APP_ROOT}" \
-    ENV="/opt/anaconda3/bin/activate ${AIKIT_APP_ROOT}" \
-    PROMPT_COMMAND=". /opt/anaconda3/bin/activate ${AIKIT_APP_ROOT}"
+ENV BASH_ENV="/opt/anaconda3/bin/activate ${APP_ROOT}" \
+    ENV="/opt/anaconda3/bin/activate ${APP_ROOT}" \
+    PROMPT_COMMAND=". /opt/anaconda3/bin/activate ${APP_ROOT}"
 
 ENV SUMMARY="" \
     DESCRIPTION=""
@@ -34,11 +34,11 @@ ENV SUMMARY="" \
 LABEL summary="$SUMMARY" \
       description="$DESCRIPTION" \
       io.k8s.description="$DESCRIPTION" \
-      io.k8s.display-name="Anaconda Python 3.8" \
+      io.k8s.display-name="Anaconda Python 3.7" \
       io.openshift.expose-services="8080:http" \
-      io.openshift.tags="builder,python,python38,python-38,anaconda-python38" \
-      com.redhat.component="python-38-container" \
-      name="ubi8/anaconda-38" \
+      io.openshift.tags="builder,python,python37,python-37,anaconda-python37" \
+      com.redhat.component="python-37-container" \
+      name="ubi8/anaconda-37" \
       version="1" \
       usage="" \
       maintainer="Probably Anaconda"
@@ -71,30 +71,28 @@ COPY ./s2i/bin/ $STI_SCRIPTS_PATH
 # - In order to drop the root user, we have to make some directories world
 #   writable as OpenShift default security model is to run the container
 #   under random UID.
-
-# Source conda.sh for all login and interactive shells.
-RUN ln -s /opt/anaconda3/etc/profile.d/conda.sh /etc/profile.d/conda.sh && \
-    echo ". /etc/profile.d/conda.sh" >> ~/.bashrc
-
 RUN \
     /opt/anaconda3/bin/conda create -y --prefix ${APP_ROOT} python=${PYTHON_VERSION} && \
+    /opt/anaconda3/bin/conda install -y --prefix ${APP_ROOT} -c intel intel-aikit-tensorflow intel-aikit-pytorch && \
     chown -R 1001:0 ${APP_ROOT} && \
     fix-permissions ${APP_ROOT} -P && \
     fix-permissions /opt/anaconda3 -P && \
     rpm-file-permissions
 
-RUN \
-    /opt/anaconda3/bin/conda create -y --prefix ${AIKIT_APP_ROOT} python=3.7 && \
-    /opt/anaconda3/bin/conda install -y --prefix ${AIKIT_APP_ROOT} -c intel intel-aikit-tensorflow intel-aikit-pytorch && \
-    chown -R 1001:0 ${AIKIT_APP_ROOT} && \
-    fix-permissions ${AIKIT_APP_ROOT} -P && \
-    fix-permissions /opt/anaconda3 -P && \
-    rpm-file-permissions
+COPY . /tmp/src
+
+RUN rm -rf /tmp/src/.git* && \
+    chown -R 1001 /tmp/src && \
+    chgrp -R 0 /tmp/src && \
+    chmod -R g+w /tmp/src && \
+    rm -rf /tmp/scripts && \
+    mv /tmp/src/.s2i/bin /tmp/scripts
+
+RUN /tmp/scripts/assemble
 
 USER 1001
 
 # Clone Intel Model Zoo
 RUN git clone --single-branch https://github.com/IntelAI/models.git
 
-# Set the default CMD to print the usage of the language image.
-CMD $STI_SCRIPTS_PATH/usage
+CMD [ "/opt/app-root/builder/run" ]
