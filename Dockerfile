@@ -2,6 +2,8 @@
 # applications.
 FROM registry.access.redhat.com/ubi8/s2i-base
 
+USER root
+
 EXPOSE 8080
 
 # TODO(Spryor): ensure these are right, add Anaconda versions
@@ -78,7 +80,17 @@ RUN \
     fix-permissions /opt/anaconda3 -P && \
     rpm-file-permissions
 
+COPY . /tmp/src
+
+RUN rm -rf /tmp/src/.git* && \
+    chown -R 1001 /tmp/src && \
+    chgrp -R 0 /tmp/src && \
+    chmod -R g+w /tmp/src && \
+    rm -rf /tmp/scripts && \
+    mv /tmp/src/.s2i/bin /tmp/scripts
+
+RUN /tmp/scripts/assemble
+
 USER 1001
 
-# Set the default CMD to print the usage of the language image.
-CMD $STI_SCRIPTS_PATH/usage
+CMD [ "/opt/app-root/builder/run" ]
