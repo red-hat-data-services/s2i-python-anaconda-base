@@ -1,5 +1,7 @@
 #!/bin/bash
 
+APP_ROOT=/opt/app-root
+
 case $OC_VERSION in
     3.10|3.10+|3.10.*)
         OC_VERSION=3.10
@@ -24,4 +26,4 @@ case $OC_VERSION in
         ;;
 esac
 
-exec /opt/app-root/bin/oc-$OC_VERSION "$@"
+exec ${APP_ROOT}/bin/oc-$OC_VERSION "$@"

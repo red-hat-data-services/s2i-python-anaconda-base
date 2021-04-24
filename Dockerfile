@@ -1,4 +1,4 @@
-# This image provides a Python 3.8 environment you can use to run your Python
+# This image provides a Python 3.7 environment you can use to run your Python
 # applications.
 FROM registry.access.redhat.com/ubi8/s2i-base
 
@@ -7,13 +7,15 @@ USER root
 EXPOSE 8080
 
 # TODO(Spryor): ensure these are right, add Anaconda versions
-ENV PYTHON_VERSION=3.8 \
+ENV PYTHON_VERSION=3.7 \
     PATH=$HOME/.local/bin/:$PATH \
     PYTHONUNBUFFERED=1 \
     PYTHONIOENCODING=UTF-8 \
     LC_ALL=en_US.UTF-8 \
     LANG=en_US.UTF-8 \
-    PIP_NO_CACHE_DIR=off
+    PIP_NO_CACHE_DIR=off \
+    APP_ROOT=/opt/app-root \
+    CONDA_ROOT=/opt/anaconda3
 
 # RHEL7 base images automatically set these envvars to run scl_enable. RHEl8
 # images, however, don't as most images don't need SCLs any more. But we want
@@ -24,9 +26,9 @@ ENV PYTHON_VERSION=3.8 \
 #    PROMPT_COMMAND=". ${APP_ROOT}/etc/scl_enable"
 
 # Ensure we're enabling Anaconda by forcing the activation script in the shell
-ENV BASH_ENV="/opt/anaconda3/bin/activate ${APP_ROOT}" \
-    ENV="/opt/anaconda3/bin/activate ${APP_ROOT}" \
-    PROMPT_COMMAND=". /opt/anaconda3/bin/activate ${APP_ROOT}"
+ENV BASH_ENV="${CONDA_ROOT}/bin/activate ${APP_ROOT}" \
+    ENV="${CONDA_ROOT}/bin/activate ${APP_ROOT}" \
+    PROMPT_COMMAND=". ${CONDA_ROOT}/bin/activate ${APP_ROOT}"
 
 
 
@@ -36,11 +38,11 @@ ENV SUMMARY="" \
 LABEL summary="$SUMMARY" \
       description="$DESCRIPTION" \
       io.k8s.description="$DESCRIPTION" \
-      io.k8s.display-name="Anaconda Python 3.8" \
+      io.k8s.display-name="Anaconda Python 3.7" \
       io.openshift.expose-services="8080:http" \
-      io.openshift.tags="builder,python,python38,python-38,anaconda-python38" \
-      com.redhat.component="python-38-container" \
-      name="ubi8/anaconda-38" \
+      io.openshift.tags="builder,python,python37,python-37,anaconda-python37" \
+      com.redhat.component="python-37-container" \
+      name="ubi8/anaconda-37" \
       version="1" \
       usage="" \
       maintainer="Probably Anaconda"
@@ -50,9 +52,8 @@ RUN INSTALL_PKGS="nss_wrapper \
         mod_session atlas-devel gcc-gfortran libffi-devel libtool-ltdl enchant" && \
     curl https://repo.anaconda.com/archive/Anaconda3-2020.11-Linux-x86_64.sh > Anaconda3-2020.11-Linux-x86_64.sh && \
     chmod +x Anaconda3-2020.11-Linux-x86_64.sh && \
-    ./Anaconda3-2020.11-Linux-x86_64.sh -b -p /opt/anaconda3 && \
+    ./Anaconda3-2020.11-Linux-x86_64.sh -b -p ${CONDA_ROOT} && \
     rm ./Anaconda3-2020.11-Linux-x86_64.sh && \
-    yum -y module disable python38:3.8 && \
     yum -y module enable httpd:2.4 && \
     yum -y --setopt=tsflags=nodocs install $INSTALL_PKGS && \
     rpm -V $INSTALL_PKGS && \
@@ -74,10 +75,10 @@ COPY ./s2i/bin/ $STI_SCRIPTS_PATH
 #   writable as OpenShift default security model is to run the container
 #   under random UID.
 RUN \
-    /opt/anaconda3/bin/conda create -y --prefix ${APP_ROOT} python=${PYTHON_VERSION} && \
+    ${CONDA_ROOT}/bin/conda create -y --prefix ${APP_ROOT} python=${PYTHON_VERSION} && \
     chown -R 1001:0 ${APP_ROOT} && \
     fix-permissions ${APP_ROOT} -P && \
-    fix-permissions /opt/anaconda3 -P && \
+    fix-permissions ${CONDA_ROOT} -P && \
     rpm-file-permissions
 
 COPY . /tmp/src

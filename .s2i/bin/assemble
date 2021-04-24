@@ -4,25 +4,28 @@ set -x
 
 set -eo pipefail
 
+CONDA_ROOT=/opt/anaconda3
+APP_ROOT=/opt/app-root
+
 ########################################################################
 # INFO: Install everything that's required for Jupyter notebooks here.
 ########################################################################
 
 # Ensure we are using the latest pip and wheel packages.
 
-/opt/anaconda3/bin/conda install --prefix ${APP_ROOT} pip setuptools wheel
+${CONDA_ROOT}/bin/conda install --prefix ${APP_ROOT} pip setuptools wheel
 
 # Install mod_wsgi for use in optional webdav support.
 
-/opt/anaconda3/bin/conda install --prefix ${APP_ROOT} -c conda-forge 'mod_wsgi>=4.6.8'
+${CONDA_ROOT}/bin/conda install --prefix ${APP_ROOT} -c conda-forge 'mod_wsgi>=4.6.8'
 
 # Install supervisord for managing multiple applications.
 
-/opt/anaconda3/bin/conda install --prefix ${APP_ROOT} 'supervisor>=4.1.0'
+${CONDA_ROOT}/bin/conda install --prefix ${APP_ROOT} 'supervisor>=4.1.0'
 
 # Install base packages needed for running Jupyter Notebooks. 
 
-/opt/anaconda3/bin/conda install --prefix ${APP_ROOT} --file /tmp/src/requirements.txt
+${CONDA_ROOT}/bin/conda install --prefix ${APP_ROOT} --file /tmp/src/requirements.txt
 
 npm cache clean --force
 

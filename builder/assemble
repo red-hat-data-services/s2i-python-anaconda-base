@@ -4,6 +4,8 @@ set -x
 
 set -eo pipefail
 
+APP_ROOT=/opt/app-root
+
 # Ensure that any requirements.txt from prior build has been removed.
 
 rm -f requirements.txt
@@ -26,5 +28,5 @@ fi
 if [ x"$JUPYTER_MASTER_FILES" != x"" ]; then
     mkdir -p $JUPYTER_MASTER_FILES
     shopt -s dotglob
-    mv /opt/app-root/src/* $JUPYTER_MASTER_FILES
+    mv ${APP_ROOT}/src/* $JUPYTER_MASTER_FILES
 fi
