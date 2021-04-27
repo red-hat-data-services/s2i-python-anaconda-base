@@ -13,7 +13,14 @@ ENV PYTHON_VERSION=3.7 \
     PYTHONIOENCODING=UTF-8 \
     LC_ALL=en_US.UTF-8 \
     LANG=en_US.UTF-8 \
-    PIP_NO_CACHE_DIR=off
+    PIP_NO_CACHE_DIR=off \
+    APP_ROOT=/opt/app-root \
+    CONDA_ROOT=/opt/anaconda3
+
+# Intel TensorFlow specific Envs
+ENV KMP_AFFINITY=KMP_AFFINITY=\'granularity="fine,verbose,compact,1,0"\' \
+    KMP_BLOCKTIME=1 \
+    KMP_SETTINGS=1
 
 # RHEL7 base images automatically set these envvars to run scl_enable. RHEl8
 # images, however, don't as most images don't need SCLs any more. But we want
@@ -24,9 +31,9 @@ ENV PYTHON_VERSION=3.7 \
 #    PROMPT_COMMAND=". ${APP_ROOT}/etc/scl_enable"
 
 # Ensure we're enabling Anaconda by forcing the activation script in the shell
-ENV BASH_ENV="/opt/anaconda3/bin/activate ${APP_ROOT}" \
-    ENV="/opt/anaconda3/bin/activate ${APP_ROOT}" \
-    PROMPT_COMMAND=". /opt/anaconda3/bin/activate ${APP_ROOT}"
+ENV BASH_ENV="${CONDA_ROOT}/bin/activate ${APP_ROOT}" \
+    ENV="${CONDA_ROOT}/bin/activate ${APP_ROOT}" \
+    PROMPT_COMMAND=". ${CONDA_ROOT}/bin/activate ${APP_ROOT}"
 
 ENV SUMMARY="" \
     DESCRIPTION=""
@@ -48,9 +55,8 @@ RUN INSTALL_PKGS="nss_wrapper \
         mod_session atlas-devel gcc-gfortran libffi-devel libtool-ltdl enchant" && \
     curl https://repo.anaconda.com/archive/Anaconda3-2020.11-Linux-x86_64.sh > Anaconda3-2020.11-Linux-x86_64.sh && \
     chmod +x Anaconda3-2020.11-Linux-x86_64.sh && \
-    ./Anaconda3-2020.11-Linux-x86_64.sh -b -p /opt/anaconda3 && \
+    ./Anaconda3-2020.11-Linux-x86_64.sh -b -p ${CONDA_ROOT} && \
     rm ./Anaconda3-2020.11-Linux-x86_64.sh && \
-    yum -y module disable python38:3.8 && \
     yum -y module enable httpd:2.4 && \
     yum -y --setopt=tsflags=nodocs install $INSTALL_PKGS && \
     rpm -V $INSTALL_PKGS && \
@@ -72,11 +78,12 @@ COPY ./s2i/bin/ $STI_SCRIPTS_PATH
 #   writable as OpenShift default security model is to run the container
 #   under random UID.
 RUN \
-    /opt/anaconda3/bin/conda create -y --prefix ${APP_ROOT} python=${PYTHON_VERSION} && \
-    /opt/anaconda3/bin/conda install -y --prefix ${APP_ROOT} -c intel intel-aikit-tensorflow intel-aikit-pytorch && \
+    ${CONDA_ROOT}/bin/conda create -y --prefix ${APP_ROOT} python=${PYTHON_VERSION} && \
+    ${CONDA_ROOT}/bin/conda install -y --prefix ${APP_ROOT} -c intel intel-aikit-pytorch intel-aikit-tensorflow && \
+    # ${CONDA_ROOT}/bin/conda install -y --prefix ${APP_ROOT} -c intel -c conda-forge intel-aikit-modin && \
     chown -R 1001:0 ${APP_ROOT} && \
     fix-permissions ${APP_ROOT} -P && \
-    fix-permissions /opt/anaconda3 -P && \
+    fix-permissions ${CONDA_ROOT} -P && \
     rpm-file-permissions
 
 COPY . /tmp/src
@@ -89,6 +96,10 @@ RUN rm -rf /tmp/src/.git* && \
     mv /tmp/src/.s2i/bin /tmp/scripts
 
 RUN /tmp/scripts/assemble
+
+RUN ${CONDA_ROOT}/bin/conda clean -y --all
+
+RUN ${CONDA_ROOT}/bin/conda config --set auto_activate_base false
 
 USER 1001
 

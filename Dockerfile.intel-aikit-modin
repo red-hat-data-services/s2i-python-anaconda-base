@@ -17,11 +17,6 @@ ENV PYTHON_VERSION=3.7 \
     APP_ROOT=/opt/app-root \
     CONDA_ROOT=/opt/anaconda3
 
-# Intel TensorFlow specific Envs
-ENV KMP_AFFINITY=KMP_AFFINITY=\'granularity="fine,verbose,compact,1,0"\' \
-    KMP_BLOCKTIME=1 \
-    KMP_SETTINGS=1
-
 # RHEL7 base images automatically set these envvars to run scl_enable. RHEl8
 # images, however, don't as most images don't need SCLs any more. But we want
 # to run it even on RHEL8, because we set the virtualenv environment as part of
@@ -79,7 +74,7 @@ COPY ./s2i/bin/ $STI_SCRIPTS_PATH
 #   under random UID.
 RUN \
     ${CONDA_ROOT}/bin/conda create -y --prefix ${APP_ROOT} python=${PYTHON_VERSION} && \
-    ${CONDA_ROOT}/bin/conda install -y --prefix ${APP_ROOT} -c intel intel-aikit-tensorflow && \
+    ${CONDA_ROOT}/bin/conda install -y --prefix ${APP_ROOT} -c intel -c conda-forge intel-aikit-modin && \
     chown -R 1001:0 ${APP_ROOT} && \
     fix-permissions ${APP_ROOT} -P && \
     fix-permissions ${CONDA_ROOT} -P && \

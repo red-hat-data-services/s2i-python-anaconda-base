@@ -30,8 +30,6 @@ ENV BASH_ENV="${CONDA_ROOT}/bin/activate ${APP_ROOT}" \
     ENV="${CONDA_ROOT}/bin/activate ${APP_ROOT}" \
     PROMPT_COMMAND=". ${CONDA_ROOT}/bin/activate ${APP_ROOT}"
 
-
-
 ENV SUMMARY="" \
     DESCRIPTION=""
 
@@ -91,6 +89,8 @@ RUN rm -rf /tmp/src/.git* && \
     mv /tmp/src/.s2i/bin /tmp/scripts
 
 RUN /tmp/scripts/assemble
+
+RUN ${CONDA_ROOT}/bin/conda clean -y --all
 
 USER 1001
 

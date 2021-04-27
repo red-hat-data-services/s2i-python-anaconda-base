@@ -3,9 +3,6 @@
 APP_ROOT=/opt/app-root
 
 case $OC_VERSION in
-    3.10|3.10+|3.10.*)
-        OC_VERSION=3.10
-        ;;
     3.11|3.11+|3.11.*)
         OC_VERSION=3.11
         ;;
@@ -21,8 +18,17 @@ case $OC_VERSION in
     4.3|4.3+|4.3.*)
         OC_VERSION=4.3
         ;;
+    4.4|4.4+|4.4.*)
+        OC_VERSION=4.4
+        ;;
+    4.5|4.5+|4.5.*)
+        OC_VERSION=4.5
+        ;;
+    4.6|4.6+|4.6.*)
+        OC_VERSION=4.6
+        ;;
     *)
-        OC_VERSION=4.1
+        OC_VERSION=4.6
         ;;
 esac
 
