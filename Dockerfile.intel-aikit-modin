@@ -59,9 +59,6 @@ RUN INSTALL_PKGS="nss_wrapper \
     rpm -e --nodeps redhat-logos-httpd && \
     yum -y clean all --enablerepo='*'
 
-# Copy the S2I scripts from the specific language image to $STI_SCRIPTS_PATH.
-COPY ./s2i/bin/ $STI_SCRIPTS_PATH
-
 # TODO(Spryor): What extra files exactly...?
 # Copy extra files to the image.
 # COPY ./root/ /
