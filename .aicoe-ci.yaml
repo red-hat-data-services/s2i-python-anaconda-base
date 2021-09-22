@@ -1,0 +1,10 @@
+check:
+  - thoth-build
+build:
+  build-stratergy: Dockerfile
+  dockerfile-path: Dockerfile
+  registry: quay.io
+  registry-org: modh
+  registry-project: s2i-python-anaconda-base
+  registry-secret: modh-pusher-secret
+  custom-tag: latest
